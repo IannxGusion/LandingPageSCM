@@ -23,7 +23,11 @@ const mainNavItems: NavItem[] = [
         href: '/pengiriman',
         icon: TruckIcon,
     },
-    
+    {
+        title: 'Laporan',
+        href: '/laporan',
+        icon: BookOpen,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
@@ -42,7 +46,9 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/dashboard" prefetch>
-                                <AppLogo />
+                                <span className="text-xl font-bold text-blue-700 dark:text-blue-400">
+                                    LandingpageSCM
+                                </span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
