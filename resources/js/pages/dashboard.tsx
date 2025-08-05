@@ -1,95 +1,131 @@
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { ShoppingCart, DollarSign, Users, Info, Truck, PackageSearch } from 'lucide-react';
 import { motion } from 'framer-motion';
-import {
-  Truck, Package, FileText, Warehouse, ClipboardList, ArrowRight
-} from 'lucide-react';
 
-const StatCard = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
-  <motion.div
-    whileHover={{ scale: 1.02 }}
-    transition={{ duration: 0.3 }}
-    className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-5 rounded-2xl shadow-md flex items-center gap-4"
-  >
-    <div className="p-3 bg-white/20 rounded-full">
-      {icon}
-    </div>
-    <div>
-      <div className="text-sm opacity-80">{label}</div>
-      <div className="text-2xl font-bold">{value}</div>
-    </div>
-  </motion.div>
-);
+const breadcrumbs: BreadcrumbItem[] = [
+  { title: 'SCM', href: '/dashboard' },
+];
 
-const DataRow = ({ title, subtitle, right, icon }: { title: string, subtitle: string, right: string, icon: React.ReactNode }) => (
-  <div className="flex items-center justify-between p-4 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition rounded-xl border border-neutral-200 dark:border-neutral-700">
-    <div className="flex items-center gap-3">
-      <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-        {icon}
-      </div>
-      <div>
-        <div className="font-semibold">{title}</div>
-        <div className="text-sm text-neutral-500">{subtitle}</div>
-      </div>
-    </div>
-    <div className="text-sm text-neutral-500">{right}</div>
-  </div>
-);
-
-export default function DashboardSCM() {
+export default function Dashboard() {
   return (
-    <AppLayout breadcrumbs={[{ title: 'SCM', href: '/dashboard' }]}>
-      <Head title="Dashboard SCM" />
-      <div className="p-6 space-y-8">
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <Head title="SCM Dashboard" />
 
-        {/* Header */}
+      <div className="p-6 space-y-6">
+        {/* Hero Section */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="bg-blue-700 text-white p-6 rounded-2xl shadow-lg"
+          className="relative bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl overflow-hidden"
         >
-          <h1 className="text-3xl font-bold mb-2">Supply Chain Dashboard</h1>
-          <p className="text-white/80">Pantau alur produk, gudang, dan dokumen pengiriman Anda secara real-time.</p>
+          <h1 className="text-4xl font-bold tracking-tight">Smart Commerce Management</h1>
+          <p className="mt-2 text-white/90 text-lg max-w-xl">
+            Pantau produk, penjualan, dan status pengiriman Anda dalam satu dashboard pintar dan interaktif.
+          </p>
+          <div className="absolute right-4 bottom-4 opacity-30 text-9xl pointer-events-none">
+            <ShoppingCart size={120} />
+          </div>
         </motion.div>
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          <StatCard icon={<Package className="w-6 h-6" />} label="Jumlah Produk" value="245" />
-          <StatCard icon={<Warehouse className="w-6 h-6" />} label="Stok Gudang" value="12.430 item" />
-          <StatCard icon={<Truck className="w-6 h-6" />} label="Pengiriman Aktif" value="5" />
-          <StatCard icon={<FileText className="w-6 h-6" />} label="Total Dokumen" value="97" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <GlassCard
+            icon={<ShoppingCart className="text-white" />}
+            label="Total Produk"
+            value="210 Produk"
+            iconBg="from-indigo-500 to-indigo-700"
+          />
+          <GlassCard
+            icon={<DollarSign className="text-white" />}
+            label="Total Penjualan"
+            value="Rp 32.500.000"
+            iconBg="from-green-500 to-green-700"
+          />
+          <GlassCard
+            icon={<Users className="text-white" />}
+            label="Pelanggan Aktif"
+            value="1.240 Pengguna"
+            iconBg="from-pink-500 to-pink-700"
+          />
         </div>
 
-        {/* 2 Column Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Pengiriman Terbaru */}
-          <section className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Truck className="text-blue-500" /> Pengiriman Terbaru
-            </h2>
-            <div className="space-y-3">
-              <DataRow title="SHIP-2311" subtitle="Gudang A" right="2 jam lalu" icon={<Truck />} />
-              <DataRow title="SHIP-2310" subtitle="Gudang B" right="Kemarin" icon={<Truck />} />
-              <DataRow title="SHIP-2309" subtitle="Gudang C" right="2 hari lalu" icon={<Truck />} />
-            </div>
-          </section>
+        {/* Info Section */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="flex gap-4 items-start bg-indigo-50 dark:bg-neutral-900/40 border-l-4 border-indigo-600 dark:border-indigo-400 p-5 rounded-xl shadow-sm"
+        >
+          <div className="mt-1 text-indigo-600 dark:text-indigo-400">
+            <Info />
+          </div>
+          <div>
+            <h2 className="font-semibold text-indigo-900 dark:text-white">Info Bulanan:</h2>
+            <p className="text-sm text-neutral-700 dark:text-neutral-300 mt-1">
+              Raih bonus penjualan hingga <span className="font-bold">20%</span> bulan ini jika pengiriman tepat waktu dan stok selalu tersedia!
+            </p>
+          </div>
+        </motion.div>
 
-          {/* Dokumen SCM */}
-          <section className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <ClipboardList className="text-blue-500" /> Dokumen Terbaru
-            </h2>
-            <div className="space-y-3">
-              <DataRow title="PO #INV-1023" subtitle="Purchase Order" right="1 jam lalu" icon={<FileText />} />
-              <DataRow title="SJ #203" subtitle="Surat Jalan" right="Hari ini" icon={<FileText />} />
-              <DataRow title="INV #2112" subtitle="Invoice" right="Kemarin" icon={<FileText />} />
-            </div>
-          </section>
+        {/* Pengiriman Real-time */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white dark:bg-neutral-800 p-5 rounded-2xl border shadow-sm"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <Truck className="text-indigo-600" />
+            <h3 className="text-lg font-semibold">Status Pengiriman Real-Time</h3>
+          </div>
+          <div className="text-sm text-neutral-600 dark:text-neutral-300">
+            Menunggu koneksi ke server pengiriman... <br />
+            (Integrasikan dengan WebSocket atau sistem real-time tracking)
+          </div>
+        </motion.div>
 
-        </div>
+        {/* Grafik / Analitik */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="h-64 bg-white dark:bg-neutral-800 border border-dashed border-neutral-300 dark:border-neutral-600 rounded-2xl flex items-center justify-center text-neutral-400 dark:text-neutral-500 text-sm"
+        >
+          Grafik Penjualan & Stok (Integrasikan dengan Chart.js atau Recharts)
+        </motion.div>
       </div>
     </AppLayout>
+  );
+}
+
+// Kartu statistik bergaya kaca
+function GlassCard({
+  icon,
+  label,
+  value,
+  iconBg,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  iconBg: string;
+}) {
+  return (
+    <motion.div
+      whileHover={{ y: -4, scale: 1.01 }}
+      transition={{ type: 'spring', stiffness: 200 }}
+      className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-md shadow-lg border border-neutral-200 dark:border-neutral-700 rounded-2xl p-5 flex gap-4 items-center"
+    >
+      <div className={`p-3 rounded-full bg-gradient-to-br ${iconBg} shadow-md`}>
+        {icon}
+      </div>
+      <div>
+        <div className="text-sm text-neutral-600 dark:text-neutral-400">{label}</div>
+        <div className="text-2xl font-bold text-neutral-900 dark:text-white">{value}</div>
+      </div>
+    </motion.div>
   );
 }
