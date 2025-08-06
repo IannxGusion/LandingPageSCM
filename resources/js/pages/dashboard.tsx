@@ -1,3 +1,4 @@
+// resources/js/Pages/Dashboard.tsx
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -14,7 +15,7 @@ import {
   PackageSearch,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 // Chart.js imports
 import {
@@ -34,17 +35,62 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ChartTit
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'SCM', href: '/dashboard' }];
 
+/* ----------------- helpers for dynamic chart ----------------- */
+type OrderForChart = {
+  id: string;
+  tanggal: string; // yyyy-mm-dd
+  totalInt: number;
+  items?: { id: number; nama: string; hargaInt: number; qty: number }[];
+  namaPembeli?: string;
+  totalText?: string;
+  status?: string;
+};
+
+function readOrders(): OrderForChart[] {
+  try {
+    const raw = localStorage.getItem('scm_orders');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function readInventory(): { id: number; nama: string; stock: number }[] {
+  try {
+    const raw = localStorage.getItem('scm_inventory');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function getLastNDays(n = 7) {
+  const days: { iso: string; label: string }[] = [];
+  const today = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const label = d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' });
+    days.push({ iso, label });
+  }
+  return days;
+}
+
+/* ----------------- main component ----------------- */
 export default function Dashboard() {
-  // notifikasi mock
+  // notifikasi mock (TIDAK DIUBAH — sesuai permintaan)
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([
     { id: 'n1', title: 'Order #A1023 Tertunda', body: 'Kurir melaporkan keterlambatan.', time: '10m', read: false, type: 'warning' },
     { id: 'n2', title: 'Stok Rendah: SKU-556', body: 'Sisa 3 unit.', time: '1h', read: false, type: 'info' },
     { id: 'n3', title: 'Pembayaran Sukses', body: 'Order #A1020 terbayar', time: '1d', read: true, type: 'success' },
   ]);
-
   const unread = notifications.filter((n) => !n.read).length;
-
   function markAllRead() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }
@@ -52,31 +98,96 @@ export default function Dashboard() {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
   }
 
-  // mock orders
+  // mock orders list (tetap ada jika diperlukan; tidak mengubahnya)
   const orders = [
     { id: 'A1024', customer: 'PT Sinar', total: 'Rp 2.650.000', status: 'In Transit', eta: '2 hari' },
     { id: 'A1023', customer: 'CV Jaya', total: 'Rp 850.000', status: 'Delayed', eta: '—' },
     { id: 'A1022', customer: 'UD Maju', total: 'Rp 4.200.000', status: 'Delivered', eta: 'Selesai' },
   ];
 
-  // --- Chart data & options (mock) ---
+  /* ----------------- dynamic chart data logic ----------------- */
+  const [ordersSource, setOrdersSource] = useState<OrderForChart[]>(() => {
+    const read = readOrders();
+    if (read.length) return read;
+    // fallback mock sample if none
+    const today = new Date().toISOString().slice(0, 10);
+    return [
+      { id: 'SAMPLE-1', tanggal: today, totalInt: 1250000, items: [{ id: 1, nama: 'Sample', hargaInt: 1250000, qty: 1 }], namaPembeli: 'Sample', status: 'Delivered' },
+    ];
+  });
+  const [inventory, setInventory] = useState(() => readInventory());
+
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === 'scm_orders') {
+        setOrdersSource(readOrders());
+      }
+      if (e.key === 'scm_inventory') {
+        setInventory(readInventory());
+      }
+    }
+    window.addEventListener('storage', onStorage);
+    // also poll once on mount to pick changes from same tab actions
+    setOrdersSource(readOrders());
+    setInventory(readInventory());
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const last7 = useMemo(() => getLastNDays(7), []);
+
+  const salesByDay = useMemo(() => {
+    const map = new Map<string, number>();
+    last7.forEach((d) => map.set(d.iso, 0));
+    ordersSource.forEach((o) => {
+      const t = o.tanggal?.slice(0, 10);
+      if (!t) return;
+      if (map.has(t)) {
+        map.set(t, (map.get(t) || 0) + (o.totalInt || 0));
+      }
+    });
+    return last7.map((d) => map.get(d.iso) || 0);
+  }, [ordersSource, last7]);
+
+  const stockSeries = useMemo(() => {
+    if (inventory && inventory.length > 0) {
+      const totalStock = inventory.reduce((s, it) => s + (it.stock || 0), 0);
+      return last7.map(() => totalStock);
+    }
+    const baseline = 1000;
+    const soldByDayMap = new Map<string, number>();
+    last7.forEach((d) => soldByDayMap.set(d.iso, 0));
+    ordersSource.forEach((o) => {
+      const t = o.tanggal?.slice(0, 10);
+      if (!t || !soldByDayMap.has(t)) return;
+      const qty = (o.items || []).reduce((s, it) => s + (it.qty || 0), 0);
+      soldByDayMap.set(t, (soldByDayMap.get(t) || 0) + qty);
+    });
+    const series: number[] = [];
+    let running = baseline;
+    last7.forEach((d) => {
+      running = Math.max(0, running - (soldByDayMap.get(d.iso) || 0));
+      series.push(running);
+    });
+    return series;
+  }, [ordersSource, inventory, last7]);
+
   const chartData = useMemo(() => {
     return {
-      labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+      labels: last7.map((d) => d.label),
       datasets: [
         {
           label: 'Penjualan (Rp)',
-          data: [1200000, 1900000, 3000000, 500000, 2000000, 3000000, 2500000],
-          borderColor: '#6366F1', // indigo-500
+          data: salesByDay,
+          borderColor: '#6366F1',
           backgroundColor: 'rgba(99,102,241,0.12)',
           tension: 0.35,
           yAxisID: 'y',
           pointRadius: 3,
         },
         {
-          label: 'Stok Tersedia (unit)',
-          data: [500, 470, 450, 420, 400, 390, 380],
-          borderColor: '#16A34A', // green-600
+          label: 'Perkiraan Stok (unit)',
+          data: stockSeries,
+          borderColor: '#16A34A',
           backgroundColor: 'rgba(22,163,74,0.08)',
           tension: 0.35,
           yAxisID: 'y1',
@@ -85,30 +196,21 @@ export default function Dashboard() {
         },
       ],
     };
-  }, []);
+  }, [last7, salesByDay, stockSeries]);
 
   const chartOptions = useMemo(() => {
     return {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: {
-        mode: 'index' as const,
-        intersect: false,
-      },
+      interaction: { mode: 'index' as const, intersect: false },
       plugins: {
-        legend: {
-          position: 'top' as const,
-          labels: {
-            color: 'rgb(100 116 139)', // neutral-500
-          },
-        },
+        legend: { position: 'top' as const, labels: { color: 'rgb(100 116 139)' } },
         tooltip: {
           callbacks: {
             label: function (context: any) {
               const label = context.dataset.label ?? '';
               const value = context.parsed.y ?? context.parsed;
               if (label.toLowerCase().includes('penjualan')) {
-                // format as rupiah
                 return `${label}: Rp ${Number(value).toLocaleString('id-ID')}`;
               }
               return `${label}: ${value}`;
@@ -117,10 +219,7 @@ export default function Dashboard() {
         },
       },
       scales: {
-        x: {
-          ticks: { color: 'rgb(148 163 184)' }, // neutral-400
-          grid: { color: 'rgba(148,163,184,0.08)' },
-        },
+        x: { ticks: { color: 'rgb(148 163 184)' }, grid: { color: 'rgba(148,163,184,0.08)' } },
         y: {
           type: 'linear' as const,
           display: true,
@@ -128,7 +227,6 @@ export default function Dashboard() {
           ticks: {
             color: 'rgb(148 163 184)',
             callback: function (val: any) {
-              // show compact rupiah
               if (typeof val === 'number') {
                 if (val >= 1000000) return `Rp ${Math.round(val / 1000000)}M`;
                 if (val >= 1000) return `Rp ${Math.round(val / 1000)}k`;
@@ -149,10 +247,31 @@ export default function Dashboard() {
     };
   }, []);
 
+  /* ----------------- derive recentOrders for the card list (menggunakan ordersSource) ----------------- */
+  const recentOrders = useMemo(() => {
+    return [...ordersSource]
+      .sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''))
+      .slice(0, 10)
+      .map((o) => ({
+        id: o.id,
+        customer: o.namaPembeli ?? 'Pelanggan',
+        total: o.totalInt ? `Rp ${o.totalInt.toLocaleString('id-ID')}` : o.totalText ?? '-',
+        status: o.status ?? 'Pending',
+        eta:
+          o.status &&
+          (o.status.toLowerCase().includes('deliv') ||
+            o.status.toLowerCase().includes('diterima') ||
+            o.status.toLowerCase().includes('delivered') ||
+            o.status.toLowerCase().includes('selesai'))
+            ? 'Selesai'
+            : '—',
+      }));
+  }, [ordersSource]);
+
+  /* ----------------- JSX (UI) ----------------- */
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="SCM Admin Dashboard" />
-      
 
       <div className="p-6 space-y-6">
         {/* Topbar */}
@@ -168,7 +287,7 @@ export default function Dashboard() {
               <input className="bg-transparent outline-none text-sm w-full" placeholder="Cari produk, pesanan, pelanggan..." />
             </div>
 
-            {/* Notifikasi */}
+            {/* Notifikasi (TIDAK DIUBAH) */}
             <div className="relative">
               <button
                 onClick={() => setNotifOpen((s) => !s)}
@@ -292,42 +411,52 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Orders table */}
+        {/* ======================= Pesanan Terbaru (DIGANTI: Card list) ======================= */}
         <div className="bg-white dark:bg-neutral-800 border dark:border-neutral-700 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">Pesanan Terbaru</h3>
             <div className="text-sm text-neutral-500">Menampilkan 10 terbaru</div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-neutral-500 dark:text-neutral-400">
-                <tr>
-                  <th className="py-2">Order</th>
-                  <th className="py-2">Pelanggan</th>
-                  <th className="py-2">Total</th>
-                  <th className="py-2">Status</th>
-                  <th className="py-2">ETA</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((o) => (
-                  <tr key={o.id} className="border-t dark:border-neutral-700">
-                    <td className="py-3 font-medium">{o.id}</td>
-                    <td className="py-3 text-neutral-600 dark:text-neutral-300">{o.customer}</td>
-                    <td className="py-3">{o.total}</td>
-                    <td className="py-3"><StatusBadge status={o.status} /></td>
-                    <td className="py-3 text-sm text-neutral-500">{o.eta}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid gap-3">
+            {recentOrders.length === 0 && (
+              <div className="text-sm text-neutral-500">Belum ada pesanan.</div>
+            )}
+
+            {recentOrders.map((o) => (
+              <div
+                key={o.id}
+                className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-neutral-900/40 shadow-sm border border-neutral-100 dark:border-neutral-700"
+              >
+                <div>
+                  <div className="font-medium">{o.customer}</div>
+                  <div className="text-xs text-neutral-500 mt-1">ID: {o.id} • {o.total}</div>
+                </div>
+
+                <div className="text-right">
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                      o.status.toLowerCase().includes('selesai') || o.status.toLowerCase().includes('delivered')
+                        ? 'bg-green-100 text-green-700'
+                        : o.status.toLowerCase().includes('tertunda') || o.status.toLowerCase().includes('delayed')
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-indigo-100 text-indigo-700'
+                    }`}
+                  >
+                    {o.status}
+                  </span>
+                  <div className="text-xs text-neutral-400 mt-1">{o.eta}</div>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="mt-4 flex justify-end">
             <button className="text-sm text-indigo-600">Lihat semua pesanan →</button>
           </div>
         </div>
+        {/* =============================================================================== */}
+
       </div>
     </AppLayout>
   );
