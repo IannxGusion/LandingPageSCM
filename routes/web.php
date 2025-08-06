@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CartController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -21,8 +22,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('pengiriman.index');
 
     Route::get('/laporan', function () {
-    return Inertia::render('laporan');
-});
+        return Inertia::render('laporan');
+    })->name('laporan');
+
+    Route::get('/keranjang', function () {
+    return Inertia::render('Keranjang');
+    })->name('keranjang');
 
 });
 

@@ -28,6 +28,11 @@ const mainNavItems: NavItem[] = [
         href: '/laporan',
         icon: BookOpen,
     },
+    {
+        title: 'keranjang',
+        href: '/keranjang',
+        icon: ShoppingBag,
+    }
 ];
 
 const footerNavItems: NavItem[] = [

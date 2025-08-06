@@ -1,9 +1,11 @@
-import { Head } from '@inertiajs/react';
+// ProdukPage.tsx
+import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Star, X, ChevronLeft, ChevronRight, Eye, ShoppingCart } from 'lucide-react';
+import { Star, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
+// NOTE: removed `Inertia` import and using `router` from @inertiajs/react
 
 type Produk = {
   id: number;
@@ -20,37 +22,42 @@ const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Produk', href: '/produk' },
 ];
 
-/* --- gunakan path publik (public/images/produk/1.jpeg ...) --- */
-/* urutan gambar TIDAK diubah, seperti permintaanmu */
+/* contoh produk — pastikan file ada di public/1.jpeg ... public/24.jpeg */
 const produkList: Produk[] = [
-  { id: 1, nama: 'Monitor LED 24 inch', harga: 'Rp 2.500.000', deskripsi: 'Tampilan jernih Full HD...', rating: 4, kategori: 'Elektronik', gambar: ['/images/produk/1.jpeg','/images/produk/2.jpeg','/images/produk/3.jpeg'] },
-  { id: 2, nama: 'Printer LaserJet Pro', harga: 'Rp 1.800.000', deskripsi: 'Cepat dan hemat tinta...', rating: 5, kategori: 'Elektronik', gambar: ['/images/produk/4.jpeg','/images/produk/5.jpeg','/images/produk/6.jpeg'] },
-  { id: 3, nama: 'Keyboard Mechanical RGB', harga: 'Rp 750.000', deskripsi: 'Sensasi mengetik menyenangkan...', rating: 4, kategori: 'Aksesoris', gambar: ['/images/produk/7.jpeg','/images/produk/8.jpeg','/images/produk/9.jpeg'] },
-  { id: 4, nama: 'Kursi Ergonomis Kantor', harga: 'Rp 1.200.000', deskripsi: 'Nyaman digunakan seharian...', rating: 5, kategori: 'Furniture', gambar: ['/images/produk/10.jpeg','/images/produk/11.jpeg','/images/produk/12.jpeg'] },
-  { id: 5, nama: 'Mouse Wireless Precision', harga: 'Rp 350.000', deskripsi: 'Akurasi tinggi dengan desain ergonomis...', rating: 4, kategori: 'Aksesoris', gambar: ['/images/produk/13.jpeg','/images/produk/14.jpeg','/images/produk/15.jpeg'] },
-  { id: 6, nama: 'Headset Gaming Stereo', harga: 'Rp 420.000', deskripsi: 'Suara jernih, mikrofon noise-cancelling...', rating: 4, kategori: 'Elektronik', gambar: ['/images/produk/16.jpeg','/images/produk/17.jpeg','/images/produk/18.jpeg'] },
-  { id: 7, nama: 'SSD NVMe 1TB', harga: 'Rp 1.400.000', deskripsi: 'Kecepatan baca tulis tinggi...', rating: 5, kategori: 'Elektronik', gambar: ['/images/produk/19.jpeg','/images/produk/20.jpeg','/images/produk/21.jpeg'] },
-  { id: 8, nama: 'Rak Serbaguna Kayu', harga: 'Rp 650.000', deskripsi: 'Desain minimalis, cocok untuk kantor...', rating: 4, kategori: 'Furniture', gambar: ['/images/produk/22.jpeg','/images/produk/23.jpeg','/images/produk/24.jpeg'] },
+  { id: 1, nama: 'Monitor LED 24 inch', harga: 'Rp 2.500.000', deskripsi: 'Tampilan jernih Full HD...', rating: 4, kategori: 'Elektronik', gambar: ['1.jpeg','2.jpeg','3.jpeg'] },
+  { id: 2, nama: 'Printer LaserJet Pro', harga: 'Rp 1.800.000', deskripsi: 'Cepat dan hemat tinta...', rating: 5, kategori: 'Elektronik', gambar: ['4.jpeg','5.jpeg','6.jpeg'] },
+  { id: 3, nama: 'Keyboard Mechanical RGB', harga: 'Rp 750.000', deskripsi: 'Sensasi mengetik menyenangkan...', rating: 4, kategori: 'Aksesoris', gambar: ['7.jpeg','8.jpeg','9.jpeg'] },
+  { id: 4, nama: 'Kursi Ergonomis Kantor', harga: 'Rp 1.200.000', deskripsi: 'Nyaman digunakan seharian...', rating: 5, kategori: 'Furniture', gambar: ['10.jpeg','11.jpeg','12.jpeg'] },
+  { id: 5, nama: 'Mouse Wireless Precision', harga: 'Rp 350.000', deskripsi: 'Akurasi tinggi dengan desain ergonomis...', rating: 4, kategori: 'Aksesoris', gambar: ['13.jpeg','14.jpeg','15.jpeg'] },
+  { id: 6, nama: 'Headset Gaming Stereo', harga: 'Rp 420.000', deskripsi: 'Suara jernih, mikrofon noise-cancelling...', rating: 4, kategori: 'Elektronik', gambar: ['16.jpeg','17.jpeg','18.jpeg'] },
+  { id: 7, nama: 'SSD NVMe 1TB', harga: 'Rp 1.400.000', deskripsi: 'Kecepatan baca tulis tinggi...', rating: 5, kategori: 'Elektronik', gambar: ['19.jpeg','20.jpeg','21.jpeg'] },
+  { id: 8, nama: 'Rak Serbaguna Kayu', harga: 'Rp 650.000', deskripsi: 'Desain minimalis, cocok untuk kantor...', rating: 4, kategori: 'Furniture', gambar: ['22.jpeg','23.jpeg','24.jpeg'] },
 ];
 
 const kategoriList = ['Semua', 'Elektronik', 'Aksesoris', 'Furniture'];
 
-/* fallback image (data-uri SVG) — tidak butuh file eksternal */
+/* fallback image simple data-uri */
 const fallbackImage =
   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"><rect width="100%" height="100%" fill="%23E5E7EB"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239CA3AF" font-size="20" font-family="Arial,Helvetica,sans-serif">Image not available</text></svg>';
 
-/* Variants (typed) */
-const gridVariants: Variants = {
-  hidden: {},
-  show: {
-    transition: { staggerChildren: 0.06 },
-  },
-};
-
+const gridVariants: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 12, scale: 0.995 },
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 260, damping: 22 } },
 };
+
+function readCart(): any[] {
+  try {
+    const raw = localStorage.getItem('scm_cart');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCart(items: any[]) {
+  localStorage.setItem('scm_cart', JSON.stringify(items));
+}
 
 export default function ProdukPage() {
   const [kategori, setKategori] = useState<string>('Semua');
@@ -58,6 +65,7 @@ export default function ProdukPage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
+  const [qty, setQty] = useState<number>(1);
 
   const selectedProduct = produkList.find((p) => p.id === selected) ?? null;
 
@@ -76,48 +84,66 @@ export default function ProdukPage() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // deps intentionally minimal
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isModalOpen]);
 
   function openModal(id: number) {
     setSelected(id);
     setActiveImageIndex(0);
+    setQty(1);
     setIsModalOpen(true);
     document.body.style.overflow = 'hidden';
   }
 
   function closeModal() {
-    setIsModalOpen(false);
     setSelected(null);
     setActiveImageIndex(0);
+    setIsModalOpen(false);
     document.body.style.overflow = '';
-  }
-
-  function addToCart(productId: number) {
-    // placeholder: sambungkan dengan logic keranjang Anda
-    alert(`Produk ${productId} ditambahkan ke keranjang (demo).`);
-  }
-
-  function prevImage() {
-    if (!selectedProduct) return;
-    setActiveImageIndex((i) => (i <= 0 ? selectedProduct.gambar.length - 1 : i - 1));
-  }
-
-  function nextImage() {
-    if (!selectedProduct) return;
-    setActiveImageIndex((i) => (i >= selectedProduct.gambar.length - 1 ? 0 : i + 1));
-  }
-
-  function goToImage(index: number) {
-    if (!selectedProduct) return;
-    setActiveImageIndex(Math.max(0, Math.min(index, selectedProduct.gambar.length - 1)));
   }
 
   function onImgError(e: React.SyntheticEvent<HTMLImageElement, Event>) {
     const img = e.currentTarget;
     img.onerror = null;
     img.src = fallbackImage;
+  }
+
+  function prevImage() {
+    if (!selectedProduct) return;
+    setActiveImageIndex((i) => (i <= 0 ? selectedProduct.gambar.length - 1 : i - 1));
+  }
+  function nextImage() {
+    if (!selectedProduct) return;
+    setActiveImageIndex((i) => (i >= selectedProduct.gambar.length - 1 ? 0 : i + 1));
+  }
+  function goToImage(index: number) {
+    if (!selectedProduct) return;
+    setActiveImageIndex(Math.max(0, Math.min(index, selectedProduct.gambar.length - 1)));
+  }
+
+  function addToCartAndGoToCart(prod: Produk, quantity: number) {
+    // update local cart
+    const cart = readCart();
+    const existing = cart.find(it => it.id === prod.id);
+    if (existing) {
+      existing.qty = Math.min((existing.qty || 0) + quantity, 999);
+    } else {
+      cart.push({
+        id: prod.id,
+        nama: prod.nama,
+        hargaText: prod.harga,
+        hargaInt: parseInt(String(prod.harga).replace(/[^0-9]/g, '')) || 0,
+        qty: quantity,
+        gambar: prod.gambar[0] ?? '1.jpeg',
+      });
+    }
+    writeCart(cart);
+
+    // close modal first
+    closeModal();
+
+    // then navigate using Inertia router (react)
+    // router.visit will request the server route /keranjang
+    router.visit('/keranjang');
   }
 
   return (
@@ -146,31 +172,15 @@ export default function ProdukPage() {
         {/* Grid */}
         <motion.div variants={gridVariants} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProduk.map((produk) => (
-            <motion.div
-              key={produk.id}
-              variants={cardVariants}
-              whileHover={{ y: -6, scale: 1.02 }}
-              transition={{ type: 'spring', stiffness: 300 }}
-              className="relative group bg-white dark:bg-neutral-800 border dark:border-neutral-700 rounded-2xl shadow-sm hover:shadow-xl transition overflow-hidden"
-            >
+            <motion.div key={produk.id} variants={cardVariants} whileHover={{ y: -6, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="relative group bg-white dark:bg-neutral-800 border dark:border-neutral-700 rounded-2xl shadow-sm hover:shadow-xl transition overflow-hidden">
               <div className="relative cursor-pointer" onClick={() => openModal(produk.id)} role="button" aria-label={`Lihat ${produk.nama}`}>
                 <motion.img src={produk.gambar[0]} alt={produk.nama} initial={{ scale: 1 }} whileHover={{ scale: 1.06 }} transition={{ duration: 0.4 }} className="w-full h-40 object-cover" loading="lazy" decoding="async" onError={onImgError} />
-
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="opacity-0 group-hover:opacity-100 pointer-events-auto transition-opacity duration-200 flex gap-2">
-                    <button onClick={(e) => { e.stopPropagation(); openModal(produk.id); }} className="flex items-center gap-2 bg-white/90 dark:bg-neutral-900/80 text-neutral-900 dark:text-white px-3 py-2 rounded-full shadow">
-                      <Eye size={16} /> Lihat
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); addToCart(produk.id); }} className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-full shadow">
-                      <ShoppingCart size={16} /> Keranjang
-                    </button>
-                  </div>
-                </div>
+                {/* overlay removed as requested (no Lihat / Keranjang buttons) */}
               </div>
 
               <div className="p-4 cursor-pointer" onClick={() => openModal(produk.id)}>
                 <h3 className="text-lg font-semibold text-neutral-800 dark:text-white">{produk.nama}</h3>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{produk.deskripsi}</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2">{produk.deskripsi}</p>
 
                 <div className="flex items-center justify-between mt-3">
                   <div>
@@ -217,8 +227,9 @@ export default function ProdukPage() {
                       <ChevronRight />
                     </button>
 
-                    <div className="rounded-xl overflow-hidden">
+                    <div className="rounded-xl overflow-hidden relative">
                       <motion.img key={selectedProduct.gambar[activeImageIndex]} src={selectedProduct.gambar[activeImageIndex]} alt={`${selectedProduct.nama} - ${activeImageIndex + 1}`} initial={{ opacity: 0, scale: 0.995 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.28 }} className="w-full h-[420px] md:h-[520px] object-cover" onClick={(e) => e.stopPropagation()} loading="lazy" decoding="async" onError={onImgError} />
+                      <div className="absolute left-4 bottom-4 bg-black/40 text-white text-xs px-2 py-1 rounded-md">Gambar {activeImageIndex + 1} / {selectedProduct.gambar.length}</div>
                     </div>
 
                     <div className="mt-3 flex items-center gap-2 overflow-x-auto py-2">
@@ -232,14 +243,23 @@ export default function ProdukPage() {
 
                   <div className="md:col-span-5 flex flex-col gap-4">
                     <div className="text-2xl font-bold text-indigo-600">{selectedProduct.harga}</div>
+
                     <div className="text-sm text-neutral-600 dark:text-neutral-300">
                       <h4 className="font-semibold mb-2">Deskripsi</h4>
                       <p>{selectedProduct.deskripsi}</p>
                     </div>
 
+                    {/* Quantity + Add to cart */}
                     <div className="flex items-center gap-3">
-                      <button onClick={() => addToCart(selectedProduct.id)} className="flex-1 px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium shadow hover:bg-indigo-700 transition">Tambah ke Keranjang</button>
-                      <button onClick={closeModal} className="px-4 py-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 transition">Tutup</button>
+                      <div className="flex items-center border rounded-lg overflow-hidden">
+                        <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-3 py-2">-</button>
+                        <div className="px-4 py-2 min-w-[48px] text-center">{qty}</div>
+                        <button onClick={() => setQty((q) => Math.min(999, q + 1))} className="px-3 py-2">+</button>
+                      </div>
+
+                      <button onClick={() => addToCartAndGoToCart(selectedProduct, qty)} className="flex-1 px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium shadow hover:bg-indigo-700 transition">
+                        Tambah ke Keranjang & Checkout
+                      </button>
                     </div>
 
                     <div className="pt-2">
@@ -252,7 +272,7 @@ export default function ProdukPage() {
                       </ul>
                     </div>
 
-                    <div className="mt-auto text-xs text-neutral-400">Gambar: gunakan file di <code>/public/images/produk</code>.</div>
+                    <div className="mt-auto text-xs text-neutral-400">Gambar: gunakan file di <code>/public/</code> (1.jpeg ... 24.jpeg).</div>
                   </div>
                 </div>
               </motion.div>
