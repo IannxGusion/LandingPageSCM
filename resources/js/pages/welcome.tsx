@@ -244,9 +244,9 @@ export default function LandingPageSCM(): JSX.Element {
         >
           <motion.h3 {...(fadeUp ? { variants: fadeUp } : {})} className="text-xl font-bold mb-4">Paket Populer</motion.h3>
           <motion.div {...(container ? { variants: container } : {})} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Starter Kit" price="Rp 499.000" items={['Mouse', 'Keyboard']} /></motion.div>
-            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Workstation Pro" price="Rp 3.499.000" items={['Monitor', 'Keyboard', 'Mouse']} highlight /></motion.div>
-            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Gaming Pack" price="Rp 3.299.000" items={['Headset', 'Mouse', 'Keyboard']} /></motion.div>
+            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Starter Kit" price="Rp 499.000" items={['Mouse','Keyboard']} /></motion.div>
+            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Workstation Pro" price="Rp 3.499.000" items={['Monitor','Keyboard','Mouse']} highlight /></motion.div>
+            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Gaming Pack" price="Rp 3.299.000" items={['Headset','Mouse','Keyboard']} /></motion.div>
           </motion.div>
         </motion.section>
 
@@ -312,7 +312,7 @@ export default function LandingPageSCM(): JSX.Element {
                       }}
                       className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
                     >
-                      Login untuk Beli
+                      Tambah ke Keranjang
                     </button>
                     <button onClick={() => setSelectedProduct(null)} className="px-4 py-2 rounded-md border">Tutup</button>
                   </div>
