@@ -197,7 +197,7 @@ export default function KeranjangPage() {
         className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl"
       >
         <h1 className="text-4xl font-bold tracking-tight">Keranjang Saya</h1>
-        <p className="mt-2 text-white/90 text-lg max-w-xl">Anda Bisa Membeli Apa Saja Yang Anda Mau</p>
+        <p className="mt-2 text-white/90 text-lg max-w-xl">Beli Barang Sesuai Kebutuhan Anda</p>
       </motion.div>
 
       <div className="p-6">
