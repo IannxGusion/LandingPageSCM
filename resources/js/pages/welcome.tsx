@@ -48,14 +48,14 @@ export default function LandingPageSCM(): JSX.Element {
 
   // sample products (ganti ke asset lokal jika perlu)
   const products: Product[] = [
-    { id: 1, name: 'Wireless Gaming Mouse X5', category: 'Mouse', price: 150000, priceText: 'Rp 150.000', img: 'https://images.unsplash.com/photo-1587825140708-2d78b2d0a6b0?q=80&w=1200&auto=format&fit=crop', badge: 'Bestseller', desc: 'Sensor presisi, ergonomis untuk jam panjang.' },
-    { id: 2, name: 'Mechanical Keyboard K87', category: 'Keyboard', price: 350000, priceText: 'Rp 350.000', img: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop', badge: null, desc: 'Switch taktil, build solid.' },
-    { id: 3, name: 'Monitor 24" FHD 144Hz', category: 'Monitor', price: 2500000, priceText: 'Rp 2.500.000', img: 'https://images.unsplash.com/photo-1587829751805-34f5e2a9b7f9?q=80&w=1200&auto=format&fit=crop', badge: 'Hot', desc: 'IPS 144Hz — smooth & vivid.' },
-    { id: 4, name: 'Ergo Workstation Desk', category: 'Meja', price: 1200000, priceText: 'Rp 1.200.000', img: 'https://images.unsplash.com/photo-1582582494700-7d6b2b9f0a1b?q=80&w=1200&auto=format&fit=crop', badge: 'Value', desc: 'Adjustable, cable management.' },
-    { id: 5, name: '1TB NVMe SSD', category: 'SSD', price: 800000, priceText: 'Rp 800.000', img: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1200&auto=format&fit=crop', badge: null, desc: 'Boot & load lebih cepat.' },
-    { id: 6, name: 'All-in-One Printer P200', category: 'Printer', price: 1500000, priceText: 'Rp 1.500.000', img: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1200&auto=format&fit=crop', badge: null, desc: 'Wi-Fi, duplex, hemat tinta.' },
-    { id: 7, name: 'Headset Gaming H7', category: 'Headset', price: 750000, priceText: 'Rp 750.000', img: 'https://images.unsplash.com/photo-1616627894501-9b3f9b2a2b8f?q=80&w=1200&auto=format&fit=crop', badge: 'Disc 10%', desc: 'Surround, mic noise-canceling.' },
-    { id: 8, name: 'Kursi Kantor ErgoSeat', category: 'Kursi', price: 2000000, priceText: 'Rp 2.000.000', img: 'https://images.unsplash.com/photo-1598300051446-c8b9fd17b0d1?q=80&w=1200&auto=format&fit=crop', badge: 'Premium', desc: 'Ergonomis & adjustable.' },
+    { id: 1, name: 'Wireless Gaming Mouse X5', category: 'Mouse', price: 150000, priceText: 'Rp 150.000', img: '13.jpeg', badge: 'Bestseller', desc: 'Sensor presisi, ergonomis untuk jam panjang.' },
+    { id: 2, name: 'Mechanical Keyboard K87', category: 'Keyboard', price: 350000, priceText: 'Rp 350.000', img: '7.jpeg', badge: null, desc: 'Switch taktil, build solid.' },
+    { id: 3, name: 'Monitor 24" FHD 144Hz', category: 'Monitor', price: 2500000, priceText: 'Rp 2.500.000', img: '1.jpeg', badge: 'Hot', desc: 'IPS 144Hz — smooth & vivid.' },
+    { id: 4, name: 'Ergo Workstation Desk', category: 'Meja', price: 1200000, priceText: 'Rp 1.200.000', img: '22.jpeg', badge: 'Value', desc: 'Adjustable, cable management.' },
+    { id: 5, name: '1TB NVMe SSD', category: 'SSD', price: 800000, priceText: 'Rp 800.000', img: '19.jpeg', badge: null, desc: 'Boot & load lebih cepat.' },
+    { id: 6, name: 'All-in-One Printer P200', category: 'Printer', price: 1500000, priceText: 'Rp 1.500.000', img: '4.jpeg', badge: null, desc: 'Wi-Fi, duplex, hemat tinta.' },
+    { id: 7, name: 'Headset Gaming H7', category: 'Headset', price: 750000, priceText: 'Rp 750.000', img: '16.jpeg', badge: 'Disc 10%', desc: 'Surround, mic noise-canceling.' },
+    { id: 8, name: 'Kursi Kantor ErgoSeat', category: 'Kursi', price: 2000000, priceText: 'Rp 2.000.000', img: '19.jpeg', badge: 'Premium', desc: 'Ergonomis & adjustable.' },
   ];
 
   // show only bestseller/hot/value (max 4); fill if kurang
@@ -244,9 +244,9 @@ export default function LandingPageSCM(): JSX.Element {
         >
           <motion.h3 {...(fadeUp ? { variants: fadeUp } : {})} className="text-xl font-bold mb-4">Paket Populer</motion.h3>
           <motion.div {...(container ? { variants: container } : {})} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Starter Kit" price="Rp 499.000" items={['Mouse','Keyboard']} /></motion.div>
-            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Workstation Pro" price="Rp 3.499.000" items={['Monitor','Keyboard','Mouse']} highlight /></motion.div>
-            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Gaming Pack" price="Rp 3.299.000" items={['Headset','Mouse','Keyboard']} /></motion.div>
+            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Starter Kit" price="Rp 499.000" items={['Mouse', 'Keyboard']} /></motion.div>
+            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Workstation Pro" price="Rp 3.499.000" items={['Monitor', 'Keyboard', 'Mouse']} highlight /></motion.div>
+            <motion.div {...(fadeUp ? { variants: fadeUp } : {})}><SimpleBundle name="Gaming Pack" price="Rp 3.299.000" items={['Headset', 'Mouse', 'Keyboard']} /></motion.div>
           </motion.div>
         </motion.section>
 
@@ -306,7 +306,14 @@ export default function LandingPageSCM(): JSX.Element {
                   <div className="text-indigo-600 font-bold text-2xl">{selectedProduct.priceText ?? formatPrice(selectedProduct.price)}</div>
                   <p className="text-sm text-slate-600 dark:text-slate-300 mt-3">{selectedProduct.desc}</p>
                   <div className="mt-auto flex gap-3">
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-md">Tambah ke Keranjang</button>
+                    <button
+                      onClick={() => {
+                      window.location.href = route('login');
+                      }}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+                    >
+                      Login untuk Beli
+                    </button>
                     <button onClick={() => setSelectedProduct(null)} className="px-4 py-2 rounded-md border">Tutup</button>
                   </div>
                 </div>
