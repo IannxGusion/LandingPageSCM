@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'SCM', href: '/dashboard' },
@@ -195,9 +196,12 @@ export default function KeranjangPage() {
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Keranjang - SCM" />
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl">
+              <h1 className="text-4xl font-bold tracking-tight">Keranjang Saya</h1>
+              <p className="mt-2 text-white/90 text-lg max-w-xl">Anda Bisa Membeli Apa Saja Yang Anda Mau</p>
+            </motion.div>
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold">Keranjang Saya</h1>
           <div className="text-sm text-neutral-500">{items.length} item</div>
         </div>
 

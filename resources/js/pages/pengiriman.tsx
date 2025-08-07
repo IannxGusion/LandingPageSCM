@@ -1,14 +1,14 @@
 // resources/js/Pages/PengirimanPage.tsx
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { Truck, LocateFixed, X } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { Truck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
+// Atur ikon default Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -16,69 +16,70 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const breadcrumbs: BreadcrumbItem[] = [
-  { title: 'SCM', href: '/dashboard' },
-  { title: 'Pengiriman', href: '/pengiriman' },
-];
-
 type OrderItem = {
   id: number;
   nama: string;
-  hargaInt: number;
   qty: number;
-  gambar?: string;
-  status?: string;
 };
 
 type Order = {
   id: string;
   namaPembeli: string;
-  tanggal: string; // yyyy-mm-dd
+  tanggal: string;
   totalText: string;
-  totalInt: number;
-  kontak: string;
   lokasi: string;
-  status: string; // Dikirim | Diterima | Dibatalkan | Pending
+  status: string;
   items?: OrderItem[];
-  koordinat?: [number, number]; // optional
+  koordinat?: [number, number];
 };
 
-function readOrders(): Order[] {
-  try {
-    const raw = localStorage.getItem('scm_orders');
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-/** Simple offline lookup mapping lokasi text -> koordinat.
- * Tambah kota lain sesuai kebutuhan atau hubungkan geocoding API jika perlu.
- */
 const CITY_COORDS: Record<string, [number, number]> = {
-  jakarta: [-6.208763, 106.845599],
-  bandung: [-6.914744, 107.60981],
-  surabaya: [-7.257472, 112.75209],
-  makassar: [-5.147665, 119.432732],
-  yogyakarta: [-7.79558, 110.36949],
-  semarang: [-6.966667, 110.416664],
-  medan: [3.583333, 98.666664],
-  bali: [-8.409518, 115.188919],
+  jakarta: [-6.2088, 106.8456],
+  serang: [-6.1149, 106.1503],
+  tangerang: [-6.1783, 106.6319],
+  cilegon: [-6.0153, 106.0539],
+  lebak: [-6.5644, 106.2522],
+  pandeglang: [-6.3265, 106.1035],
+  bandung: [-6.9147, 107.6098],
+  bekasi: [-6.2383, 106.9756],
+  bogor: [-6.595, 106.8166],
+  cirebon: [-6.732, 108.5523],
+  sukabumi: [-6.922, 106.931],
+  semarang: [-7.0051, 110.4381],
+  surakarta: [-7.5718, 110.8166],
+  pekalongan: [-6.888, 109.675],
+  magelang: [-7.4797, 110.2177],
+  cilacap: [-7.716, 109.015],
+  surabaya: [-7.2575, 112.7521],
+  malang: [-7.9797, 112.6304],
+  sidoarjo: [-7.4465, 112.7181],
+  jember: [-8.1724, 113.7001],
+  madiun: [-7.627, 111.523],
+  yogyakarta: [-7.8014, 110.3647],
+  bantul: [-7.888, 110.3288],
+  sleman: [-7.7161, 110.3554],
+  kulonprogo: [-7.8407, 110.0892],
+  gunungkidul: [-8.0287, 110.6169],
+  denpasar: [-8.65, 115.2167],
+  gianyar: [-8.5283, 115.3253],
+  badung: [-8.5819, 115.1766],
+  buleleng: [-8.112, 115.088],
+  karangasem: [-8.4467, 115.6156],
+  mataram: [-8.5833, 116.1167],
+  bima: [-8.4606, 118.7278],
+  dompu: [-8.537, 118.4619],
+  kupang: [-10.1772, 123.607],
+  ende: [-8.845, 121.6622],
+  maumere: [-8.6196, 122.2115],
 };
 
-const DEFAULT_CENTER: [number, number] = [-2.548926, 118.014863]; // pusat Indonesia
+const DEFAULT_CENTER: [number, number] = [-7.5, 112.5];
 
-function guessCoordsFromLocation(loc?: string): [number, number] | null {
+function guessCoords(loc?: string): [number, number] | null {
   if (!loc) return null;
-  const normal = loc.trim().toLowerCase();
-  for (const key of Object.keys(CITY_COORDS)) {
-    if (normal.includes(key)) return CITY_COORDS[key];
-  }
-  const tokens = normal.split(/[,\/\-]/).map(t => t.trim());
-  for (const t of tokens) {
-    if (CITY_COORDS[t]) return CITY_COORDS[t];
+  const key = loc.trim().toLowerCase().replace(/\s+/g, '');
+  for (const city in CITY_COORDS) {
+    if (key.includes(city)) return CITY_COORDS[city];
   }
   return null;
 }
@@ -86,272 +87,144 @@ function guessCoordsFromLocation(loc?: string): [number, number] | null {
 function FlyToLocation({ koordinat }: { koordinat: [number, number] | null }) {
   const map = useMap();
   useEffect(() => {
-    if (!koordinat) return;
-    map.flyTo(koordinat, 11, { duration: 1.1 });
-  }, [koordinat, map]);
+    if (koordinat) {
+      map.flyTo(koordinat, 11);
+    }
+  }, [koordinat]);
   return null;
 }
 
-export default function PengirimanPage(): JSX.Element {
+export default function PengirimanPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
-  const [lokasiFokus, setLokasiFokus] = useState<[number, number] | null>(null);
-  const [showMapPopupOrderId, setShowMapPopupOrderId] = useState<string | null>(null);
+  const [fokus, setFokus] = useState<[number, number] | null>(null);
   const markerRefs = useRef<Record<string, any>>({});
-  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
-    setOrders(readOrders());
-    function onStorage(e: StorageEvent) {
-      if (e.key === 'scm_orders') setOrders(readOrders());
+    const raw = localStorage.getItem('scm_orders');
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        if (Array.isArray(data)) setOrders(data);
+      } catch { }
     }
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  // Build markers list (with coords guessed when needed)
-  const markers = useMemo(() => {
-    return orders.map((o) => {
-      const coords = o.koordinat ?? guessCoordsFromLocation(o.lokasi) ?? null;
-      return { order: o, coords };
-    });
-  }, [orders]);
-
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = search.toLowerCase().trim();
     if (!q) return orders;
-    return orders.filter((o) => {
-      return (
-        o.namaPembeli.toLowerCase().includes(q) ||
-        o.lokasi.toLowerCase().includes(q) ||
-        o.id.toLowerCase().includes(q)
-      );
-    });
-  }, [orders, search]);
+    return orders.filter(o =>
+      o.namaPembeli.toLowerCase().includes(q) ||
+      o.lokasi.toLowerCase().includes(q) ||
+      o.id.toLowerCase().includes(q)
+    );
+  }, [search, orders]);
 
-  // map center: fokus jika ada, otherwise default
-  const mapCenter: [number, number] = lokasiFokus ?? DEFAULT_CENTER;
-
-  // when showMapPopupOrderId changes, open popup on corresponding marker (if present)
-  useEffect(() => {
-    if (!showMapPopupOrderId) return;
-    const ref = markerRefs.current[showMapPopupOrderId];
-    try {
-      // react-leaflet Marker instance has .openPopup() via the underlying Leaflet marker
-      if (ref && typeof ref.openPopup === 'function') {
-        ref.openPopup();
-      } else if (ref && ref.current && typeof ref.current.openPopup === 'function') {
-        ref.current.openPopup();
-      }
-    } catch {
-      // ignore
-    }
-  }, [showMapPopupOrderId]);
-
-  // framer-motion variants (use any to avoid strict typing friction)
-  const container: any = shouldReduceMotion ? undefined : { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
-  const fadeUp: any = shouldReduceMotion ? undefined : { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.42, ease: 'easeOut' } } };
-  const rowHover = { y: -6, boxShadow: '0 10px 30px rgba(2,6,23,0.12)' };
+  const mapCenter: [number, number] = fokus ?? DEFAULT_CENTER;
 
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title="Pengiriman Barang" />
-      <style>{`
-        @media print { .no-print { display: none !important } }
-        .map-glow { box-shadow: 0 8px 40px rgba(59,130,246,0.12); border-radius: 12px; }
-      `}</style>
+    <AppLayout>
+      <Head title="Pengiriman" />
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl">
+        <h1 className="text-4xl font-bold tracking-tight">Pengiriman</h1>
+        <p className="mt-2 text-white/90 text-lg max-w-xl">informasi pengiriman dengan lokasi pembeli</p>
+      </motion.div>
 
       <div className="p-6 space-y-6">
-        {/* Welcome card */}
-        <motion.div
-          {...(container ? { initial: 'hidden', whileInView: 'show', viewport: { once: true, amount: 0.2 }, variants: container } : {})}
-          className="rounded-2xl p-6 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm border border-white/10 shadow-lg"
-        >
-          <motion.div {...(fadeUp ? { variants: fadeUp } : {})} className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-gradient-to-tr from-indigo-600 to-sky-500 text-white shadow-md">
-                <Truck size={28} />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">Selamat datang di Dashboard Pengiriman</h1>
-                <div className="text-sm text-slate-600 dark:text-slate-300 mt-1">Pantau status pengiriman, lihat lokasi, dan kelola order secara cepat.</div>
-              </div>
-            </div>
+        <div className="flex flex-col md:flex-row justify-between items-center gap-3">
+          <input
+            className="border border-neutral-300 px-4 py-2 rounded-md w-full md:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Cari nama, lokasi, atau ID"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-            <div className="mt-4 md:mt-0 ml-auto flex gap-3 items-center">
-              <div className="text-sm text-slate-600 dark:text-slate-300 text-right">
-                <div className="font-semibold">Total Orders</div>
-                <div className="text-lg font-bold">{orders.length}</div>
-              </div>
-              <button
-                onClick={() => { setSearch(''); setLokasiFokus(null); setShowMapPopupOrderId(null); }}
-                className="px-4 py-2 rounded-md bg-white dark:bg-neutral-900 border hover:scale-102 transition transform no-print"
-              >
-                Reset
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Main card: table (top) */}
-        <motion.div
-          {...(container ? { initial: 'hidden', whileInView: 'show', viewport: { once: true, amount: 0.12 }, variants: container } : {})}
-          className="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-6"
-        >
-          {/* search + controls */}
-          <motion.div {...(fadeUp ? { variants: fadeUp } : {})} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="🔍 Cari nama, lokasi atau ID order..."
-                className="w-full md:w-96 px-4 py-3 rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
-              />
-              <button onClick={() => { setSearch(''); }} className="px-3 py-2 rounded-md bg-indigo-600 text-white text-sm hover:brightness-105 transition no-print">Bersihkan</button>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-slate-500 dark:text-slate-300">Tampilkan: <strong className="ml-1">{filtered.length}</strong></div>
-            </div>
-          </motion.div>
-
-          <motion.div {...(fadeUp ? { variants: fadeUp } : {})} className="overflow-hidden rounded-xl border border-gray-100 dark:border-neutral-700">
-            <table className="min-w-full text-sm">
-              <thead className="bg-indigo-50 dark:bg-neutral-700 text-indigo-800 dark:text-white font-semibold">
-                <tr>
-                  <th className="px-4 py-3 text-left">#</th>
-                  <th className="px-4 py-3 text-left">ID</th>
-                  <th className="px-4 py-3 text-left">Nama</th>
-                  <th className="px-4 py-3 text-left">Tanggal</th>
-                  <th className="px-4 py-3 text-left">Total</th>
-                  <th className="px-4 py-3 text-left">Lokasi</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left no-print">Aksi</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y dark:divide-neutral-700">
+        <div className="overflow-auto border rounded shadow-sm">
+          <table className="w-full text-sm">
+            <thead className="bg-neutral-100 text-neutral-700">
+              <tr>
+                <th className="p-2 text-left">ID</th>
+                <th className="p-2 text-left">Nama</th>
+                <th className="p-2 text-left">Tanggal</th>
+                <th className="p-2 text-left">Total</th>
+                <th className="p-2 text-left">Lokasi</th>
+                <th className="p-2 text-left">Status</th>
+                <th className="p-2 text-left">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-6 text-center text-neutral-500">Belum ada data pengiriman.</td>
+                    <td colSpan={7} className="p-4 text-center text-gray-500">Tidak ada data</td>
                   </tr>
                 ) : (
-                  filtered.map((o, idx) => {
-                    const coords = o.koordinat ?? guessCoordsFromLocation(o.lokasi);
+                  filtered.map((o) => {
+                    const coords = o.koordinat ?? guessCoords(o.lokasi);
                     return (
                       <motion.tr
                         key={o.id}
-                        {...(fadeUp ? { variants: fadeUp } : {})}
-                        whileHover={!shouldReduceMotion ? rowHover : undefined}
-                        transition={{ type: 'spring', stiffness: 300, damping: 26 }}
-                        className="hover:bg-gray-50 dark:hover:bg-neutral-700"
+                        className="border-t hover:bg-neutral-50"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <td className="px-4 py-3 align-top">{idx + 1}</td>
-                        <td className="px-4 py-3 align-top font-mono text-xs">{o.id}</td>
-                        <td className="px-4 py-3 align-top">{o.namaPembeli}</td>
-                        <td className="px-4 py-3 align-top">{o.tanggal}</td>
-                        <td className="px-4 py-3 align-top">{o.totalText}</td>
-                        <td className="px-4 py-3 align-top">{o.lokasi}</td>
-                        <td className="px-4 py-3 align-top">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold shadow-sm transition-all duration-300 ${
-                            o.status === 'Dikirim' ? 'bg-yellow-200 text-yellow-900 animate-pulse' :
-                            o.status === 'Diterima' ? 'bg-green-200 text-green-900' :
-                            o.status === 'Dibatalkan' ? 'bg-red-200 text-red-900' : 'bg-gray-100 text-gray-800'
-                          }`}>
+                        <td className="p-2">{o.id}</td>
+                        <td className="p-2">{o.namaPembeli}</td>
+                        <td className="p-2">{o.tanggal}</td>
+                        <td className="p-2">{o.totalText}</td>
+                        <td className="p-2">{o.lokasi}</td>
+                        <td className="p-2">
+                          <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">
                             {o.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 align-top no-print">
-                          <div className="flex gap-2 items-center">
-                            <motion.button
-                              onClick={() => {
-                                const c = coords ?? DEFAULT_CENTER;
-                                setLokasiFokus(c);
-                                setShowMapPopupOrderId(o.id);
-                                // scroll to map for UX
-                                const el = document.getElementById('map-area');
-                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                              }}
-                              whileHover={!shouldReduceMotion ? { scale: 1.03 } : undefined}
-                              className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-300 transition text-sm"
-                            >
-                              <LocateFixed size={14} /> Lihat Lokasi
-                            </motion.button>
-
-                            <button className="px-3 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs">Detail</button>
-                          </div>
+                        <td className="p-2">
+                          <button
+                            onClick={() => setFokus(coords ?? null)}
+                            className="text-blue-600 hover:underline text-sm"
+                          >
+                            Lihat Lokasi
+                          </button>
                         </td>
                       </motion.tr>
                     );
                   })
                 )}
-              </tbody>
-            </table>
-          </motion.div>
-        </motion.div>
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
 
-        {/* Map area (below table) */}
         <motion.div
-          id="map-area"
-          {...(container ? { initial: 'hidden', whileInView: 'show', viewport: { once: true, amount: 0.12 }, variants: container } : {})}
-          className={`bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-6 ${lokasiFokus ? 'map-glow' : ''}`}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="border rounded overflow-hidden shadow-sm"
         >
-          <motion.div {...(fadeUp ? { variants: fadeUp } : {})} className="flex items-center justify-between mb-4">
-            <div>
-              <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">Peta Lokasi Pengiriman</div>
-              <div className="text-xs text-slate-500 dark:text-slate-300">Klik "Lihat Lokasi" untuk fokus ke titik. Scroll akan membawa Anda ke peta.</div>
-            </div>
-            <div className="text-xs text-slate-500">{markers.filter(m => m.coords).length} lokasi terdeteksi</div>
-          </motion.div>
-
-          <motion.div {...(fadeUp ? { variants: fadeUp } : {})} className="rounded-xl overflow-hidden border border-gray-100 dark:border-neutral-700">
-            <div className="h-[520px]">
-              <MapContainer center={mapCenter} zoom={5} scrollWheelZoom style={{ width: '100%', height: '100%' }}>
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
-                />
-                {lokasiFokus && <FlyToLocation koordinat={lokasiFokus} />}
-
-                {markers.map(({ order, coords }) => {
-                  if (!coords) return null;
-                  return (
-                    <Marker
-                      key={order.id}
-                      position={coords}
-                      ref={(el) => {
-                        // store reference so we can open popup programmatically later
-                        if (el) markerRefs.current[order.id] = el;
-                      }}
-                    >
-                      <Popup autoClose={false} closeOnClick={false}>
-                        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.26 }}>
-                          <div className="max-w-xs">
-                            <div className="font-semibold text-sm">{order.namaPembeli}</div>
-                            <div className="text-xs text-neutral-500">{order.id} • {order.tanggal}</div>
-                            <div className="text-sm mt-2">{order.totalText}</div>
-                            <div className="text-xs mt-1">Status: <strong>{order.status}</strong></div>
-                            {order.items && order.items.length > 0 && (
-                              <div className="mt-2">
-                                <div className="text-xs font-semibold">Items:</div>
-                                <ul className="text-xs list-disc pl-5">
-                                  {order.items.map(it => (
-                                    <li key={it.id}>{it.nama} x{it.qty}{it.status ? ` — ${it.status}` : ''}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      </Popup>
-                    </Marker>
-                  );
-                })}
-              </MapContainer>
-            </div>
-
-            <div className="p-3 text-xs text-slate-500 dark:text-slate-400">Jika lokasi tidak dikenali, peta akan menampilkan koordinat default. Simpan koordinat saat checkout untuk akurasi terbaik.</div>
-          </motion.div>
+          <MapContainer center={mapCenter} zoom={6} scrollWheelZoom style={{ height: '400px', width: '100%' }}>
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; OpenStreetMap contributors"
+            />
+            {fokus && <FlyToLocation koordinat={fokus} />}
+            {orders.map((order) => {
+              const coords = order.koordinat ?? guessCoords(order.lokasi);
+              if (!coords) return null;
+              return (
+                <Marker key={order.id} position={coords}>
+                  <Popup>
+                    <strong>{order.namaPembeli}</strong><br />
+                    {order.id}<br />
+                    {order.lokasi}<br />
+                    Status: {order.status}
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MapContainer>
         </motion.div>
       </div>
     </AppLayout>
