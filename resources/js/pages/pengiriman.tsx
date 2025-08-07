@@ -3,11 +3,11 @@ import AppLayout from '@/layouts/app-layout';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Atur ikon default Leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: () => string })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -102,7 +102,7 @@ export default function PengirimanPage() {
       const raw = localStorage.getItem('scm_orders');
       if (raw) {
         const data = JSON.parse(raw);
-        if (Array.isArray(data)) setOrders(data);
+        if (Array.isArray(data)) setOrders(data as Order[]);
       }
     } catch (err) {
       console.error('Gagal memuat data pesanan dari localStorage', err);
