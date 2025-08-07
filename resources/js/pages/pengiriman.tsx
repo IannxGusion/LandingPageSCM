@@ -1,11 +1,9 @@
-// resources/js/Pages/PengirimanPage.tsx
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Truck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Atur ikon default Leaflet
@@ -90,7 +88,7 @@ function FlyToLocation({ koordinat }: { koordinat: [number, number] | null }) {
     if (koordinat) {
       map.flyTo(koordinat, 11);
     }
-  }, [koordinat]);
+  }, [koordinat, map]);
   return null;
 }
 
@@ -98,15 +96,16 @@ export default function PengirimanPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
   const [fokus, setFokus] = useState<[number, number] | null>(null);
-  const markerRefs = useRef<Record<string, any>>({});
 
   useEffect(() => {
-    const raw = localStorage.getItem('scm_orders');
-    if (raw) {
-      try {
+    try {
+      const raw = localStorage.getItem('scm_orders');
+      if (raw) {
         const data = JSON.parse(raw);
         if (Array.isArray(data)) setOrders(data);
-      } catch { }
+      }
+    } catch (err) {
+      console.error('Gagal memuat data pesanan dari localStorage', err);
     }
   }, []);
 
@@ -125,23 +124,31 @@ export default function PengirimanPage() {
   return (
     <AppLayout>
       <Head title="Pengiriman" />
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl">
+
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl"
+      >
         <h1 className="text-4xl font-bold tracking-tight">Pengiriman</h1>
-        <p className="mt-2 text-white/90 text-lg max-w-xl">informasi pengiriman dengan lokasi pembeli</p>
+        <p className="mt-2 text-white/90 text-lg max-w-xl">Informasi pengiriman dengan lokasi pembeli</p>
       </motion.div>
 
       <div className="p-6 space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-3">
           <input
+            type="search"
             className="border border-neutral-300 px-4 py-2 rounded-md w-full md:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Cari nama, lokasi, atau ID"
+            aria-label="Cari pengiriman berdasarkan nama, lokasi, atau ID"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="overflow-auto border rounded shadow-sm">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto border rounded shadow-sm">
+          <table className="w-full text-sm border-collapse">
             <thead className="bg-neutral-100 text-neutral-700">
               <tr>
                 <th className="p-2 text-left">ID</th>
@@ -157,34 +164,39 @@ export default function PengirimanPage() {
               <AnimatePresence>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-4 text-center text-gray-500">Tidak ada data</td>
+                    <td colSpan={7} className="p-4 text-center text-gray-500">
+                      Tidak ada data
+                    </td>
                   </tr>
                 ) : (
-                  filtered.map((o) => {
-                    const coords = o.koordinat ?? guessCoords(o.lokasi);
+                  filtered.map(order => {
+                    const coords = order.koordinat ?? guessCoords(order.lokasi);
                     return (
                       <motion.tr
-                        key={o.id}
+                        key={order.id}
                         className="border-t hover:bg-neutral-50"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <td className="p-2">{o.id}</td>
-                        <td className="p-2">{o.namaPembeli}</td>
-                        <td className="p-2">{o.tanggal}</td>
-                        <td className="p-2">{o.totalText}</td>
-                        <td className="p-2">{o.lokasi}</td>
+                        <td className="p-2">{order.id}</td>
+                        <td className="p-2">{order.namaPembeli}</td>
+                        <td className="p-2">{order.tanggal}</td>
+                        <td className="p-2">{order.totalText}</td>
+                        <td className="p-2">{order.lokasi}</td>
                         <td className="p-2">
                           <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                            {o.status}
+                            {order.status}
                           </span>
                         </td>
                         <td className="p-2">
                           <button
+                            type="button"
                             onClick={() => setFokus(coords ?? null)}
                             className="text-blue-600 hover:underline text-sm"
+                            aria-label={`Lihat lokasi pengiriman untuk ${order.namaPembeli}`}
+                            disabled={!coords}
                           >
                             Lihat Lokasi
                           </button>
@@ -210,15 +222,18 @@ export default function PengirimanPage() {
               attribution="&copy; OpenStreetMap contributors"
             />
             {fokus && <FlyToLocation koordinat={fokus} />}
-            {orders.map((order) => {
+            {orders.map(order => {
               const coords = order.koordinat ?? guessCoords(order.lokasi);
               if (!coords) return null;
               return (
                 <Marker key={order.id} position={coords}>
                   <Popup>
-                    <strong>{order.namaPembeli}</strong><br />
-                    {order.id}<br />
-                    {order.lokasi}<br />
+                    <strong>{order.namaPembeli}</strong>
+                    <br />
+                    {order.id}
+                    <br />
+                    {order.lokasi}
+                    <br />
                     Status: {order.status}
                   </Popup>
                 </Marker>

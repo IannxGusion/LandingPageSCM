@@ -1,10 +1,9 @@
-// resources/js/Pages/KeranjangPage.tsx
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'SCM', href: '/dashboard' },
@@ -41,7 +40,7 @@ function readCart(): CartItem[] {
   }
 }
 
-function writeCart(items: CartItem[]) {
+function writeCart(items: CartItem[]): void {
   try {
     localStorage.setItem('scm_cart', JSON.stringify(items));
   } catch {
@@ -58,7 +57,7 @@ function readOrders(): Order[] {
   }
 }
 
-function writeOrders(orders: Order[]) {
+function writeOrders(orders: Order[]): void {
   try {
     localStorage.setItem('scm_orders', JSON.stringify(orders));
   } catch {
@@ -66,12 +65,12 @@ function writeOrders(orders: Order[]) {
   }
 }
 
-function ensureImgPath(path?: string) {
+function ensureImgPath(path?: string): string {
   if (!path) return '/1.jpeg';
   return path.startsWith('/') ? path : `/${path}`;
 }
 
-function formatRp(n: number) {
+function formatRp(n: number): string {
   return 'Rp ' + n.toLocaleString('id-ID');
 }
 
@@ -80,22 +79,26 @@ export default function KeranjangPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // checkout form
+  // Checkout form state
   const [namaPembeli, setNamaPembeli] = useState('');
   const [kontak, setKontak] = useState('');
   const [lokasi, setLokasi] = useState('');
 
   useEffect(() => {
     setItems(readCart());
+
     function onStorage(e: StorageEvent) {
       if (e.key === 'scm_cart') setItems(readCart());
     }
+
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  // Update quantity dengan minimal 1
   function updateQty(id: number, qty: number) {
-    const next = items.map(it => (it.id === id ? { ...it, qty: Math.max(1, qty) } : it));
+    if (qty < 1) qty = 1;
+    const next = items.map(it => (it.id === id ? { ...it, qty } : it));
     setItems(next);
     writeCart(next);
   }
@@ -111,7 +114,7 @@ export default function KeranjangPage() {
     writeCart([]);
   }
 
-  const subtotal = items.reduce((s, it) => s + (it.hargaInt || 0) * it.qty, 0);
+  const subtotal = items.reduce((s, it) => s + it.hargaInt * it.qty, 0);
 
   function openCheckout() {
     setNamaPembeli('');
@@ -125,27 +128,26 @@ export default function KeranjangPage() {
   }
 
   function buildOrderFromCart(): Order | null {
-    if (!items.length) return null;
+    if (items.length === 0) return null;
     const totalInt = subtotal;
     const totalText = formatRp(totalInt);
     const id = `ORD-${Date.now()}`;
     const tanggal = new Date().toISOString().slice(0, 10);
-    const order: Order = {
+    return {
       id,
-      namaPembeli: namaPembeli || 'Pembeli',
+      namaPembeli: namaPembeli.trim() || 'Pembeli',
       tanggal,
       totalText,
       totalInt,
-      kontak: kontak || '-',
-      lokasi: lokasi || '-',
+      kontak: kontak.trim() || '-',
+      lokasi: lokasi.trim() || '-',
       status: 'Pending',
       items,
     };
-    return order;
   }
 
   async function confirmCheckout() {
-    if (!items.length) {
+    if (items.length === 0) {
       alert('Keranjang kosong.');
       return;
     }
@@ -167,23 +169,14 @@ export default function KeranjangPage() {
       const order = buildOrderFromCart();
       if (!order) throw new Error('Tidak ada item untuk di-checkout.');
 
-      // simpan ke localStorage (scm_orders)
+      // Simpan ke localStorage
       const existing = readOrders();
       existing.push(order);
       writeOrders(existing);
 
-      // kosongkan keranjang
       clearCart();
-
-      // close modal
       setCheckoutOpen(false);
-
-      // navigasi ke halaman laporan/pengiriman
-      // ganti path jika kamu ingin ke route laporan spesifik, mis: '/pengiriman/laporan'
       router.visit('/pengiriman');
-
-      // optionally: show feedback (Inertia flash or alert)
-      // simple alert for feedback
       alert(`Checkout berhasil. Order ID: ${order.id}`);
     } catch (err) {
       console.error(err);
@@ -196,10 +189,17 @@ export default function KeranjangPage() {
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Keranjang - SCM" />
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl">
-              <h1 className="text-4xl font-bold tracking-tight">Keranjang Saya</h1>
-              <p className="mt-2 text-white/90 text-lg max-w-xl">Anda Bisa Membeli Apa Saja Yang Anda Mau</p>
-            </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl"
+      >
+        <h1 className="text-4xl font-bold tracking-tight">Keranjang Saya</h1>
+        <p className="mt-2 text-white/90 text-lg max-w-xl">Anda Bisa Membeli Apa Saja Yang Anda Mau</p>
+      </motion.div>
+
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="text-sm text-neutral-500">{items.length} item</div>
@@ -222,12 +222,17 @@ export default function KeranjangPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
               {items.map(it => (
-                <div key={it.id} className="flex gap-4 items-center bg-white dark:bg-neutral-800 p-4 rounded-lg border dark:border-neutral-700">
+                <div
+                  key={it.id}
+                  className="flex gap-4 items-center bg-white dark:bg-neutral-800 p-4 rounded-lg border dark:border-neutral-700"
+                >
                   <img
                     src={ensureImgPath(it.gambar)}
                     alt={it.nama}
                     className="w-28 h-20 object-cover rounded"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/1.jpeg'; }}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = '/1.jpeg';
+                    }}
                   />
                   <div className="flex-1">
                     <div className="font-semibold">{it.nama}</div>
@@ -252,10 +257,11 @@ export default function KeranjangPage() {
                   </div>
 
                   <div className="text-right">
-                    <div className="font-semibold">{formatRp((it.hargaInt || 0) * it.qty)}</div>
+                    <div className="font-semibold">{formatRp(it.hargaInt * it.qty)}</div>
                     <button
                       onClick={() => removeItem(it.id)}
                       className="mt-2 text-red-500 hover:underline flex items-center gap-1"
+                      aria-label={`Hapus ${it.nama} dari keranjang`}
                     >
                       <Trash2 size={16} /> Hapus
                     </button>
@@ -264,7 +270,10 @@ export default function KeranjangPage() {
               ))}
 
               <div className="flex items-center justify-between mt-4">
-                <button onClick={clearCart} className="px-4 py-2 rounded-lg bg-red-50 text-red-600 border border-red-100">
+                <button
+                  onClick={clearCart}
+                  className="px-4 py-2 rounded-lg bg-red-50 text-red-600 border border-red-100"
+                >
                   Kosongkan Keranjang
                 </button>
 
@@ -295,7 +304,9 @@ export default function KeranjangPage() {
                 </button>
               </div>
 
-              <div className="mt-3 text-xs text-neutral-400">Pembayaran & pengiriman harus dihubungkan ke backend untuk produksi.</div>
+              <div className="mt-3 text-xs text-neutral-400">
+                Pembayaran & pengiriman harus dihubungkan ke backend untuk produksi.
+              </div>
             </div>
           </div>
         )}
@@ -303,42 +314,93 @@ export default function KeranjangPage() {
         {/* Checkout Modal */}
         {checkoutOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div onClick={closeCheckout} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div
+              onClick={closeCheckout}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
+              aria-hidden="true"
+            />
             <div className="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-[90%] max-w-2xl p-6 z-10">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Checkout</h2>
-                <button onClick={closeCheckout} className="px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">Tutup</button>
+                <button
+                  onClick={closeCheckout}
+                  className="px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  aria-label="Tutup modal checkout"
+                >
+                  Tutup
+                </button>
               </div>
 
-              <div className="space-y-3">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  confirmCheckout();
+                }}
+                className="space-y-3"
+              >
                 <div>
-                  <label className="block text-sm">Nama Pembeli</label>
-                  <input value={namaPembeli} onChange={(e) => setNamaPembeli(e.target.value)} className="w-full px-3 py-2 border rounded" placeholder="Nama lengkap" />
+                  <label htmlFor="namaPembeli" className="block text-sm">
+                    Nama Pembeli
+                  </label>
+                  <input
+                    id="namaPembeli"
+                    value={namaPembeli}
+                    onChange={(e) => setNamaPembeli(e.target.value)}
+                    className="w-full px-3 py-2 border rounded"
+                    placeholder="Nama lengkap"
+                    required
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm">Kontak</label>
-                  <input value={kontak} onChange={(e) => setKontak(e.target.value)} className="w-full px-3 py-2 border rounded" placeholder="Nomor telepon" />
+                  <label htmlFor="kontak" className="block text-sm">
+                    Kontak
+                  </label>
+                  <input
+                    id="kontak"
+                    value={kontak}
+                    onChange={(e) => setKontak(e.target.value)}
+                    className="w-full px-3 py-2 border rounded"
+                    placeholder="Nomor telepon"
+                    required
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm">Lokasi Pengiriman</label>
-                  <input value={lokasi} onChange={(e) => setLokasi(e.target.value)} className="w-full px-3 py-2 border rounded" placeholder="Kota / alamat" />
+                  <label htmlFor="lokasi" className="block text-sm">
+                    Lokasi Pengiriman
+                  </label>
+                  <input
+                    id="lokasi"
+                    value={lokasi}
+                    onChange={(e) => setLokasi(e.target.value)}
+                    className="w-full px-3 py-2 border rounded"
+                    placeholder="Kota / alamat"
+                    required
+                  />
                 </div>
 
-                <div className="text-sm text-neutral-500">Total: <span className="font-semibold">{formatRp(subtotal)}</span></div>
+                <div className="text-sm text-neutral-500">
+                  Total: <span className="font-semibold">{formatRp(subtotal)}</span>
+                </div>
 
                 <div className="flex gap-2 mt-3">
                   <button
-                    onClick={confirmCheckout}
+                    type="submit"
                     disabled={loading}
                     className="flex-1 px-4 py-2 rounded bg-indigo-600 text-white disabled:opacity-60"
                   >
                     {loading ? 'Memproses...' : 'Konfirmasi & Checkout'}
                   </button>
-                  <button onClick={closeCheckout} className="px-4 py-2 rounded bg-neutral-100 dark:bg-neutral-800">Batal</button>
+                  <button
+                    type="button"
+                    onClick={closeCheckout}
+                    className="px-4 py-2 rounded bg-neutral-100 dark:bg-neutral-800"
+                  >
+                    Batal
+                  </button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         )}

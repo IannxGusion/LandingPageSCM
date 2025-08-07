@@ -1,5 +1,3 @@
-// Dashboard.tsx — versi terbaru dengan animasi dan data real dari localStorage
-
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -19,6 +17,8 @@ import {
   Title,
   Tooltip,
   Legend,
+  type ChartOptions,
+  type ChartData,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useEffect, useState } from 'react';
@@ -27,18 +27,14 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'SCM', href: '/dashboard' }];
 
-const chartOptions = {
-  responsive: true,
-  plugins: {
-    legend: {
-      position: 'top' as const,
-    },
-  },
-  scales: {
-    y: {
-      beginAtZero: true,
-    },
-  },
+// Definisikan tipe untuk Order dan Item-nya
+type OrderItem = {
+  id: number;
+  nama: string;
+  hargaText: string;
+  hargaInt: number;
+  qty: number;
+  gambar?: string;
 };
 
 type Order = {
@@ -50,16 +46,10 @@ type Order = {
   kontak: string;
   lokasi: string;
   status: string;
-  items: {
-    id: number;
-    nama: string;
-    hargaText: string;
-    hargaInt: number;
-    qty: number;
-    gambar?: string;
-  }[];
+  items: OrderItem[];
 };
 
+// Fungsi untuk baca orders dari localStorage
 function readOrders(): Order[] {
   try {
     const raw = localStorage.getItem('scm_orders');
@@ -69,6 +59,20 @@ function readOrders(): Order[] {
   }
 }
 
+const chartOptions: ChartOptions<'line'> = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top',
+    },
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+    },
+  },
+};
+
 export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
 
@@ -77,12 +81,14 @@ export default function Dashboard() {
     setOrders(data.reverse());
   }, []);
 
+  // Hitung statistik
   const totalProduk = orders.reduce((t, o) => t + o.items.length, 0);
   const totalPendapatan = orders.reduce((t, o) => t + o.totalInt, 0);
   const totalPelanggan = new Set(orders.map((o) => o.kontak)).size;
   const totalPengiriman = orders.length;
 
-  const chartData = {
+  // Data untuk grafik
+  const chartData: ChartData<'line'> = {
     labels: orders.map((o) => o.tanggal),
     datasets: [
       {
@@ -99,6 +105,7 @@ export default function Dashboard() {
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="SCM Admin Dashboard" />
       <div className="p-6 space-y-6">
+        {/* Header Selamat Datang */}
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -109,6 +116,7 @@ export default function Dashboard() {
           <p className="text-sm text-white/80 mt-1">Pantau pengiriman, produk, dan pelanggan Anda secara real-time.</p>
         </motion.div>
 
+        {/* Kartu statistik */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           <GlassCard icon={<ShoppingCart className="text-white" />} label="Total Produk" value={totalProduk.toString()} iconBg="from-indigo-500 to-indigo-700" />
           <GlassCard icon={<DollarSign className="text-white" />} label="Pendapatan" value={`Rp ${totalPendapatan.toLocaleString()}`} iconBg="from-green-500 to-green-700" />
@@ -116,6 +124,7 @@ export default function Dashboard() {
           <GlassCard icon={<Truck className="text-white" />} label="Pengiriman" value={totalPengiriman.toString()} iconBg="from-indigo-400 to-indigo-600" />
         </div>
 
+        {/* Grafik dan Status Pengiriman */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -128,7 +137,7 @@ export default function Dashboard() {
               <div className="text-sm text-neutral-500">Berdasarkan waktu checkout</div>
             </div>
             <div className="h-56 rounded-md">
-              <Line data={chartData} options={chartOptions as any} />
+              <Line data={chartData} options={chartOptions} />
             </div>
           </motion.div>
 
@@ -147,6 +156,7 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
+        {/* Pesanan Terbaru */}
         <div className="bg-white dark:bg-neutral-800 border dark:border-neutral-700 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">Pesanan Terbaru</h3>
