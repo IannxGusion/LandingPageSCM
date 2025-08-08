@@ -17,7 +17,7 @@ const mainNavItems: NavItem[] = [
         href: '/produkpage',
         icon: ShoppingBag,
     },
-     {
+    {
         title: 'Pengiriman',
         href: '/pengiriman',
         icon: TruckIcon,
